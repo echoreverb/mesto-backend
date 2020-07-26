@@ -2,8 +2,11 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const ValidationError = require('../libs/errors/validation-error');
+const NotFoundError = require('../libs/errors/not-found-error');
 
-const createUser = async (req, res) => {
+// eslint-disable-next-line consistent-return
+const createUser = async (req, res, next) => {
   const {
     name, about, avatar, email, password,
   } = req.body;
@@ -22,45 +25,51 @@ const createUser = async (req, res) => {
       },
     });
   } catch (e) {
-    if (e.name === 'ValidationError') {
-      res.status(400).send({ message: e.message });
-      return;
+    if ((!password || password.length < 8) && e.name === 'ValidationError') {
+      e.message += ', password: Необходимо задать пароль длиной не менее восьми символов!';
+      return next(new ValidationError(e.message));
     }
-    res.status(500).send({ message: e.message });
+    if (e.name === 'ValidationError') {
+      return next(new ValidationError(e.message));
+    }
+    if (!password || password.length < 8) {
+      return next(new ValidationError('user validation failed: password: Необходимо задать пароль длиной не менее восьми символов!'));
+    }
+    next(e);
   }
 };
 
-const getUsers = async (req, res) => {
+const getUsers = async (req, res, next) => {
   try {
-    const users = await User.find({}).orFail();
+    const users = await User.find({});
     res.json({ data: users });
   } catch (e) {
     if (e.name === 'DocumentNotFoundError') {
       res.json({ data: [] });
       return;
     }
-    res.status(500).send({ message: e.message });
+    next(e);
   }
 };
 
-const getUserById = async (req, res) => {
+// eslint-disable-next-line consistent-return
+const getUserById = async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.userId)) {
-    res.status(400).send({ message: 'Некорректный userId' });
-    return;
+    return next(new ValidationError('Некорректный userId'));
   }
   try {
-    const user = await User.findById(req.params.userId).orFail();
+    const user = await User.findById(req.params.userId);
     res.json({ data: user });
   } catch (e) {
     if (e.name === 'DocumentNotFoundError') {
-      res.status(404).send({ message: 'Не найден пользователь с таким userId' });
-      return;
+      return next(new NotFoundError('Не найден пользователь с таким userId'));
     }
-    res.status(500).send({ message: e.message });
+    next(e);
   }
 };
 
-const updateUser = async (req, res) => {
+// eslint-disable-next-line consistent-return
+const updateUser = async (req, res, next) => {
   const { name, about } = req.body;
   try {
     const updated = await User.findByIdAndUpdate(req.user._id,
@@ -70,14 +79,14 @@ const updateUser = async (req, res) => {
     res.json({ data: updated });
   } catch (e) {
     if (e.name === 'ValidationError') {
-      res.status(400).send({ message: e.message });
-      return;
+      return next(new ValidationError(e.message));
     }
-    res.status(500).send({ message: e.message });
+    next(e);
   }
 };
 
-const updateAvatar = async (req, res) => {
+// eslint-disable-next-line consistent-return
+const updateAvatar = async (req, res, next) => {
   const { avatar } = req.body;
   try {
     const updated = await User.findByIdAndUpdate(req.user._id,
@@ -87,14 +96,14 @@ const updateAvatar = async (req, res) => {
     res.json({ data: updated });
   } catch (e) {
     if (e.name === 'ValidationError') {
-      res.status(400).send({ message: e.message });
-      return;
+      return next(new ValidationError(e.message));
     }
-    res.status(500).send({ message: e.message });
+    next(e);
   }
 };
 
-const login = async (req, res) => {
+// eslint-disable-next-line consistent-return
+const login = async (req, res, next) => {
   const { email, password } = req.body;
   try {
     const user = await User.findUserByCredentials(email, password);
@@ -102,11 +111,7 @@ const login = async (req, res) => {
     res.cookie('jwt', token, { httpOnly: true, maxAge: (7 * 24 * 3600000) });
     res.status(201).send({ message: `Привет, ${user.name}!` });
   } catch (e) {
-    if (e.message === 'Неправильные почта или пароль') {
-      res.status(401).send({ message: e.message });
-      return;
-    }
-    res.status(500).send({ message: e.message });
+    next(e);
   }
 };
 

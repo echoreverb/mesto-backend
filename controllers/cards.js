@@ -1,7 +1,11 @@
 const mongoose = require('mongoose');
 const Card = require('../models/card');
+const ValidationError = require('../libs/errors/validation-error');
+const ForbiddenError = require('../libs/errors/forbidden-error');
+const NotFoundError = require('../libs/errors/not-found-error');
 
-const createCard = async (req, res) => {
+// eslint-disable-next-line consistent-return
+const createCard = async (req, res, next) => {
   const { name, link } = req.body;
   const owner = req.user._id;
   try {
@@ -9,49 +13,46 @@ const createCard = async (req, res) => {
     res.json({ data: created });
   } catch (e) {
     if (e.name === 'ValidationError') {
-      res.status(400).send({ message: e.message });
-      return;
+      return next(new ValidationError(e.message));
     }
-    res.status(500).send({ message: e.message });
+    next(e);
   }
 };
 
-const getCards = async (req, res) => {
+const getCards = async (req, res, next) => {
   try {
-    const cards = await Card.find({}).orFail();
+    const cards = await Card.find({});
     res.json({ data: cards });
   } catch (e) {
     if (e.name === 'DocumentNotFoundError') {
       res.json({ data: [] });
       return;
     }
-    res.status(500).send({ message: e.message });
+    next(e);
   }
 };
 
-const deleteCard = async (req, res) => {
+const deleteCard = async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.cardId)) {
-    res.status(400).send({ message: 'Некорректный cardId' });
-    return;
+    return next(new ValidationError('Некорректный cardId'));
   }
   try {
     const found = await Card.findById({ _id: req.params.cardId }).orFail();
     if (req.user._id !== found.owner.toString()) {
-      res.status(403).send({ message: 'Вы можете удалять только свои карточки' });
-      return;
+      return next(new ForbiddenError('Вы можете удалять только свои карточки'));
     }
-    await Card.deleteOne({ _id: req.params.cardId }).orFail();
+    await Card.deleteOne({ _id: req.params.cardId });
     res.json({ message: 'Карточка удалена' });
   } catch (e) {
     if (e.name === 'DocumentNotFoundError') {
-      res.status(404).send({ message: 'Не найдена карточка' });
-      return;
+      return next(new NotFoundError('Не найдена карточка'));
     }
-    res.status(500).send({ message: e.message });
+    next(e);
   }
 };
 
-const likeCard = async (req, res) => {
+// eslint-disable-next-line consistent-return
+const likeCard = async (req, res, next) => {
   try {
     const updated = await Card.findByIdAndUpdate(req.params.cardId,
       { $addToSet: { likes: req.user._id } },
@@ -60,18 +61,17 @@ const likeCard = async (req, res) => {
     res.json({ data: updated });
   } catch (e) {
     if (e.name === 'DocumentNotFoundError') {
-      res.status(404).send({ message: 'Не найдена карточка' });
-      return;
+      return next(new NotFoundError('Не найдена карточка'));
     }
     if (e.name === 'ValidationError') {
-      res.status(400).send({ message: e.message });
-      return;
+      return next(new ValidationError(e.message));
     }
-    res.status(500).send({ message: e.message });
+    next(e);
   }
 };
 
-const dislikeCard = async (req, res) => {
+// eslint-disable-next-line consistent-return
+const dislikeCard = async (req, res, next) => {
   try {
     const updated = await Card.findByIdAndUpdate(req.params.cardId,
       { $pull: { likes: req.user._id } },
@@ -80,14 +80,12 @@ const dislikeCard = async (req, res) => {
     res.json({ data: updated });
   } catch (e) {
     if (e.name === 'DocumentNotFoundError') {
-      res.status(404).send({ message: 'Не найдена карточка' });
-      return;
+      return next(new NotFoundError('Не найдена карточка'));
     }
     if (e.name === 'ValidationError') {
-      res.status(400).send({ message: e.message });
-      return;
+      return next(new ValidationError(e.message));
     }
-    res.status(500).send({ message: e.name });
+    next(e);
   }
 };
 
