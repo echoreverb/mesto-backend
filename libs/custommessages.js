@@ -7,6 +7,7 @@ const errormessage = {
   incorrectUserId: 'Incorrect userId',
   internalServerErr: 'Internal server error',
   pageNotFound: 'Page cannot be found',
+  notAuthorized: 'You need to login to access this page',
 };
 
 module.exports = {
