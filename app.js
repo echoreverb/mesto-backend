@@ -3,9 +3,10 @@ const mongoose = require('mongoose');
 const helmet = require('helmet');
 const bodyParser = require('body-parser');
 const { celebrate, Joi, isCelebrate } = require('celebrate');
+const { requestLogger, errorLogger } = require('./middlewares/logger');
+const auth = require('./middlewares/auth');
 const cards = require('./routes/cards');
 const users = require('./routes/users');
-const auth = require('./middlewares/auth');
 const { login, createUser } = require('./controllers/users');
 const { errormessage } = require('./libs/custommessages');
 
@@ -17,6 +18,8 @@ app.use(helmet());
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(requestLogger);
 
 app.post('/signin', celebrate({
   body: Joi.object().keys({
@@ -38,6 +41,8 @@ app.post('/signup', celebrate({
 app.use(auth);
 app.use('/users', users);
 app.use('/cards', cards);
+
+app.use(errorLogger);
 
 // eslint-disable-next-line consistent-return
 app.use((err, req, res, next) => {
