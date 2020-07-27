@@ -9,6 +9,7 @@ const cards = require('./routes/cards');
 const users = require('./routes/users');
 const { login, createUser } = require('./controllers/users');
 const { errormessage } = require('./libs/custommessages');
+const NotFoundError = require('./libs/errors/not-found-error');
 
 const { PORT = 3000 } = process.env;
 
@@ -42,6 +43,10 @@ app.use(auth);
 app.use('/users', users);
 app.use('/cards', cards);
 
+app.use((req, res, next) => {
+  next(new NotFoundError(errormessage.pageNotFound));
+});
+
 app.use(errorLogger);
 
 // eslint-disable-next-line consistent-return
@@ -61,10 +66,6 @@ app.use((err, req, res, next) => {
       ? errormessage.internalServerErr
       : message,
   });
-});
-
-app.use((req, res) => {
-  res.status(404).send({ message: errormessage.pageNotFound });
 });
 
 async function start() {
