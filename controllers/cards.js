@@ -3,6 +3,7 @@ const Card = require('../models/card');
 const ValidationError = require('../libs/errors/validation-error');
 const ForbiddenError = require('../libs/errors/forbidden-error');
 const NotFoundError = require('../libs/errors/not-found-error');
+const { errormessage } = require('../libs/custommessages');
 
 // eslint-disable-next-line consistent-return
 const createCard = async (req, res, next) => {
@@ -12,16 +13,13 @@ const createCard = async (req, res, next) => {
     const created = await Card.create({ name, link, owner });
     res.json({ data: created });
   } catch (e) {
-    if (e.name === 'ValidationError') {
-      return next(new ValidationError(e.message));
-    }
     next(e);
   }
 };
 
 const getCards = async (req, res, next) => {
   try {
-    const cards = await Card.find({});
+    const cards = await Card.find({}).orFail();
     res.json({ data: cards });
   } catch (e) {
     if (e.name === 'DocumentNotFoundError') {
@@ -32,20 +30,21 @@ const getCards = async (req, res, next) => {
   }
 };
 
+// eslint-disable-next-line consistent-return
 const deleteCard = async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.cardId)) {
-    return next(new ValidationError('Некорректный cardId'));
+    return next(new ValidationError(errormessage.incorrectCardId));
   }
   try {
     const found = await Card.findById({ _id: req.params.cardId }).orFail();
     if (req.user._id !== found.owner.toString()) {
-      return next(new ForbiddenError('Вы можете удалять только свои карточки'));
+      return next(new ForbiddenError(errormessage.forbiddenDeleteCard));
     }
     await Card.deleteOne({ _id: req.params.cardId });
     res.json({ message: 'Карточка удалена' });
   } catch (e) {
     if (e.name === 'DocumentNotFoundError') {
-      return next(new NotFoundError('Не найдена карточка'));
+      return next(new NotFoundError(errormessage.cardNotFound));
     }
     next(e);
   }
@@ -61,10 +60,7 @@ const likeCard = async (req, res, next) => {
     res.json({ data: updated });
   } catch (e) {
     if (e.name === 'DocumentNotFoundError') {
-      return next(new NotFoundError('Не найдена карточка'));
-    }
-    if (e.name === 'ValidationError') {
-      return next(new ValidationError(e.message));
+      return next(new NotFoundError(errormessage.cardNotFound));
     }
     next(e);
   }
@@ -80,10 +76,7 @@ const dislikeCard = async (req, res, next) => {
     res.json({ data: updated });
   } catch (e) {
     if (e.name === 'DocumentNotFoundError') {
-      return next(new NotFoundError('Не найдена карточка'));
-    }
-    if (e.name === 'ValidationError') {
-      return next(new ValidationError(e.message));
+      return next(new NotFoundError(errormessage.cardNotFound));
     }
     next(e);
   }

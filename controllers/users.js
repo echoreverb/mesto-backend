@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const ValidationError = require('../libs/errors/validation-error');
 const NotFoundError = require('../libs/errors/not-found-error');
+const { errormessage } = require('../libs/custommessages');
 
 // eslint-disable-next-line consistent-return
 const createUser = async (req, res, next) => {
@@ -25,23 +26,13 @@ const createUser = async (req, res, next) => {
       },
     });
   } catch (e) {
-    if ((!password || password.length < 8) && e.name === 'ValidationError') {
-      e.message += ', password: Необходимо задать пароль длиной не менее восьми символов!';
-      return next(new ValidationError(e.message));
-    }
-    if (e.name === 'ValidationError') {
-      return next(new ValidationError(e.message));
-    }
-    if (!password || password.length < 8) {
-      return next(new ValidationError('user validation failed: password: Необходимо задать пароль длиной не менее восьми символов!'));
-    }
     next(e);
   }
 };
 
 const getUsers = async (req, res, next) => {
   try {
-    const users = await User.find({});
+    const users = await User.find({}).orFail();
     res.json({ data: users });
   } catch (e) {
     if (e.name === 'DocumentNotFoundError') {
@@ -55,14 +46,14 @@ const getUsers = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const getUserById = async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.userId)) {
-    return next(new ValidationError('Некорректный userId'));
+    return next(new ValidationError(errormessage.incorrectUserId));
   }
   try {
-    const user = await User.findById(req.params.userId);
+    const user = await User.findById(req.params.userId).orFail();
     res.json({ data: user });
   } catch (e) {
     if (e.name === 'DocumentNotFoundError') {
-      return next(new NotFoundError('Не найден пользователь с таким userId'));
+      return next(new NotFoundError(errormessage.userNotFound));
     }
     next(e);
   }
@@ -78,9 +69,6 @@ const updateUser = async (req, res, next) => {
       .orFail();
     res.json({ data: updated });
   } catch (e) {
-    if (e.name === 'ValidationError') {
-      return next(new ValidationError(e.message));
-    }
     next(e);
   }
 };
@@ -95,9 +83,6 @@ const updateAvatar = async (req, res, next) => {
       .orFail();
     res.json({ data: updated });
   } catch (e) {
-    if (e.name === 'ValidationError') {
-      return next(new ValidationError(e.message));
-    }
     next(e);
   }
 };
