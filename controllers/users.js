@@ -6,6 +6,8 @@ const ValidationError = require('../libs/errors/validation-error');
 const NotFoundError = require('../libs/errors/not-found-error');
 const { errormessage } = require('../libs/custommessages');
 
+const { NODE_ENV, JWT_SECRET } = process.env;
+
 // eslint-disable-next-line consistent-return
 const createUser = async (req, res, next) => {
   const {
@@ -92,7 +94,9 @@ const login = async (req, res, next) => {
   const { email, password } = req.body;
   try {
     const user = await User.findUserByCredentials(email, password);
-    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET || 'secret-key', { expiresIn: '7d' });
+    const token = jwt.sign({ _id: user._id },
+      NODE_ENV === 'production' ? JWT_SECRET : 'secret-key',
+      { expiresIn: '7d' });
     res.cookie('jwt', token, { httpOnly: true, maxAge: (7 * 24 * 3600000) });
     res.status(201).send({ message: `Привет, ${user.name}!` });
   } catch (e) {

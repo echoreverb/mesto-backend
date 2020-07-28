@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
@@ -11,7 +12,7 @@ const { login, createUser } = require('./controllers/users');
 const { errormessage } = require('./libs/custommessages');
 const NotFoundError = require('./libs/errors/not-found-error');
 
-const { PORT = 3000 } = process.env;
+const { PORT = 3000, DB_HOST } = process.env;
 
 const app = express();
 
@@ -70,7 +71,7 @@ app.use((err, req, res, next) => {
 
 async function start() {
   try {
-    await mongoose.connect('mongodb://localhost:27017/mestodb', {
+    await mongoose.connect(DB_HOST, {
       useNewUrlParser: true,
       useCreateIndex: true,
       useFindAndModify: false,
