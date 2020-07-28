@@ -22,7 +22,10 @@
 
 ## Ссылки
 
-- деплой: https://mestoproject.gq
+- https://mestoproject.gq
+- http://mestoproject.gq
+- http://178.154.246.108
+
 - исходный код: https://github.com/echoreverb/mesto-backend
 
 ## Установка
