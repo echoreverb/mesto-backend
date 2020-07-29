@@ -1,6 +1,6 @@
 # Проектная #15. Бэкенд проекта Место
 
-В этой работе происходит настройка удалённого сервера и размещение на нём бэкенд-части проекта Место.
+В этой работе происходит настройка сервера на виртуальной машине и размещение на нём бэкенд-части проекта Место.
 
 ## REST API Место
 
@@ -55,4 +55,4 @@ $ npm run dev
 - безопасность: [jwt](https://www.npmjs.com/package/jsonwebtoken), [bcrypt](https://www.npmjs.com/package/bcrypt), [helmet](https://helmetjs.github.io)
 - валидация данных: [Joi](https://hapi.dev/module/joi/)+[celebrate](https://github.com/arb/celebrate)
 - логгирование: [Winston](https://www.npmjs.com/package/winston)
-- размещение: [Яндекс.Облако](https://cloud.yandex.ru/), [Freenom](https://www.freenom.com), [Certbot](https://certbot.eff.org/)
+- размещение: [Яндекс.Облако](https://cloud.yandex.ru/), [Freenom](https://www.freenom.com), [Certbot](https://certbot.eff.org/), [pm2](https://pm2.keymetrics.io), [nginx](https://nginx.org)
