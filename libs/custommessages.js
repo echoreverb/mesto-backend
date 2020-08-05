@@ -8,6 +8,7 @@ const errormessage = {
   internalServerErr: 'Internal server error',
   pageNotFound: 'Page cannot be found',
   notAuthorized: 'You need to login to access this page',
+  notUniqueEmail: 'This email address is already being used',
 };
 
 module.exports = {

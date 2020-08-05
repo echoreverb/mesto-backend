@@ -5,6 +5,7 @@ const User = require('../models/user');
 const ValidationError = require('../libs/errors/validation-error');
 const NotFoundError = require('../libs/errors/not-found-error');
 const { errormessage } = require('../libs/custommessages');
+const NotUniqueError = require('../libs/errors/not-unique-error');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 
@@ -28,6 +29,9 @@ const createUser = async (req, res, next) => {
       },
     });
   } catch (e) {
+    if (e.code === 11000) {
+      return next(new NotUniqueError(errormessage.notUniqueEmail));
+    }
     next(e);
   }
 };
